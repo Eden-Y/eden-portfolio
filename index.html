@@ -99,14 +99,14 @@ body.detail-open .nav,body.detail-open .nav.solid{background-color:var(--bg);box
 
 /* works */
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px}
-.card{background:transparent;border:0;border-radius:16px;overflow:hidden;cursor:pointer;color:#111113;transition:transform .45s var(--ease),box-shadow .3s}
+.card{background:#FFFFFF;border:0;border-radius:12px;overflow:hidden;cursor:pointer;color:#111113;padding:8px;transition:transform .45s var(--ease),box-shadow .3s}
 /* 提高权重：.reveal.in 的 transform:none 定义在后，同权重会盖掉 hover，必须显式压过它 */
 .card:hover,.card.reveal.in:hover,.card.reveal:hover{transform:translateY(-5px);box-shadow:0 0 0 1px rgba(144,196,60,.85),0 10px 28px rgba(0,0,0,.28)}
-.card-cover{position:relative;aspect-ratio:4/3;background:transparent;overflow:hidden;border-radius:16px 16px 0 0}
+.card-cover{position:relative;aspect-ratio:4/3;background:transparent;overflow:hidden;border-radius:7px}
 .card-cover img{width:100%;height:100%;object-fit:cover;border-radius:inherit;transition:transform .7s var(--ease)}
 .card:hover .card-cover img{transform:scale(1.05)}
 .card-cover.empty{background:#E9E9E9;display:grid;place-items:center;color:#8A8B90;font-size:12px}
-.card-body{background:#FFFFFF;border-radius:0 0 16px 16px;padding:18px 18px 22px}
+.card-body{background:transparent;border-radius:0;padding:16px 8px 10px}
 .card-title{font-family:var(--font-zh);font-size:18px;font-weight:500;margin:0 0 9px;line-height:1.4;color:#111113}
 .card-sub{font-family:var(--font-zh);font-size:var(--card-sub-size,13px);line-height:1.7;color:#5A5B60;margin:0;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:45px}
 /* 角标可写中文分类（B端 / C端 / 平面…），所以用含中文回退的字体栈、缩小字距、加大字号 */
@@ -150,15 +150,21 @@ body.detail-open .nav,body.detail-open .nav.solid{background-color:var(--bg);box
 .pdf-link svg{width:15px;height:15px;fill:currentColor;flex:0 0 auto}
 .pdf-link:hover{color:#9DB8FF;border-color:#9DB8FF}
 
-/* 详情二级页面：替代弹窗，主导航保留、左上角返回 */
-main{position:relative;z-index:1}
-/* 页脚在 main 之外，详情页打开时必须一起隐藏，否则它会被顶到页面最上方与固定导航重叠 */
-body.detail-open main,body.detail-open .footer{display:none}
-.detail-page{position:relative;z-index:1;display:none;max-width:1200px;margin:0 auto;padding:118px 28px 80px}
-body.detail-open .detail-page{display:block;animation:dpIn .5s var(--ease)}
-@keyframes dpIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+/* 详情二级页面：微信式推入/推出——详情页从右缘整页滑入压过主页，主页左移 25% 视差并压暗；返回反向滑出 */
+main{position:relative;z-index:1;transition:transform .55s var(--ease),opacity .55s ease}
+.footer{transition:transform .55s var(--ease),opacity .55s ease}
+body.detail-open main,body.detail-open .footer{transform:translateX(-25%);opacity:.55}
+body.detail-open{overflow:hidden}
+html.dp-lock{overflow:hidden}
+.detail-page{position:fixed;inset:0;z-index:45;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);padding:0 28px 80px;transform:translateX(100%);visibility:hidden;transition:transform .55s var(--ease),visibility 0s linear .58s}
+body.detail-open .detail-page{transform:none;visibility:visible;transition:transform .55s var(--ease),visibility 0s}
+.detail-page>*{max-width:1144px;margin-left:auto;margin-right:auto}
+/* 详情页是 fixed 覆盖层，会盖住 body 全局噪点，自带同款纹理保持质感一致 */
+.detail-page::before{content:"";position:fixed;inset:0;z-index:-1;background-image:var(--noise);opacity:.07;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.detail-page,main,.footer{transition:none!important}}
 /* 返回栏：滚动时常驻顶部（落在固定导航正下方），图片多时不用滚回顶部才能返回 */
-.dp-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:var(--nav-h,92px);z-index:40;background:var(--bg);padding:10px 0 14px;margin-bottom:14px}
+/* 顶部留白放在返回栏的 margin 上（不能放容器 padding：Chrome 的 sticky 吸附锚点会叠加上 padding-top，导致吸不到导航下沿）；左右必须 auto 居中，与标题/图片对齐，否则吸顶时右侧会露出图片形成缺口 */
+.dp-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:var(--nav-h,92px);z-index:40;background:var(--bg);padding:10px 0 14px;margin:118px auto 14px}
 /* 补上和 body 全局同款的噪点纹理：实心底会盖住 body::before 的噪点，导致返回栏比周围暗一级 */
 .dp-bar::before{content:"";position:absolute;inset:0;z-index:-1;background-image:var(--noise);opacity:.07;pointer-events:none}
 /* 返回：无按钮框，蓝色 icon + 文字；箭头是一条简单的小直角折线 */
@@ -216,7 +222,7 @@ body.detail-open .to-top{display:grid}
   .sec-zh{font-size:calc(var(--sec-zh-size,19px) - 4px);letter-spacing:.16em}
   .sec-dot{width:14px;height:2px}
   .grid{grid-template-columns:1fr;gap:22px}
-  .card-body{padding:16px 16px 20px}
+  .card-body{padding:14px 6px 8px}
   .card-title{font-size:16px}
   .card-sub{font-size:calc(var(--card-sub-size,13px) - .5px);min-height:43px}
   .exp-item{padding:20px 0;gap:8px}
@@ -230,8 +236,8 @@ body.detail-open .to-top{display:grid}
   /* 手机端页脚：两行都居中，并把提示句放到版权上方（上下位置互换） */
   .footer{flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:22px 20px 34px}
   .footer span:last-child{order:-1}
-  .detail-page{padding:96px 20px 56px}
-  .dp-bar{margin-bottom:20px;position:sticky;top:var(--nav-h,60px);z-index:40;background:var(--bg);padding:8px 0 12px}
+  .detail-page{padding:0 20px 56px}
+  .dp-bar{margin:96px auto 20px;position:sticky;top:var(--nav-h,60px);z-index:40;background:var(--bg);padding:8px 0 12px}
   .dp-back{font-size:13px}
   .dp-index{font-size:calc(var(--pager-size,18px)*.7)}
   .dp-title{font-size:24px;margin-top:6px}
@@ -331,9 +337,11 @@ body.detail-open .to-top{display:grid}
     const id=a.getAttribute('href').slice(1);
     const target=document.getElementById(id); if(!target)return;
     e.preventDefault();
-    /* 详情页打开时先回主页，导航仍然可用 */
+    /* 详情页打开时先收起详情（作废进行中的过渡，避免延时回调把内容清掉/状态错乱），导航仍然可用 */
     if(document.body.classList.contains('detail-open')){
+      dpGen++;
       document.body.classList.remove('detail-open');
+      document.documentElement.classList.remove('dp-lock');
       const dpEl=document.getElementById('detail-page');
       if(dpEl){ dpEl.innerHTML=''; dpEl.setAttribute('aria-hidden','true'); }
     }
@@ -556,8 +564,10 @@ body.detail-open .to-top{display:grid}
 
   /* 详情二级页面：主导航保留，左上角返回，整页铺开看得更清楚 */
   const dp=$('#detail-page');
-  let lastScroll=0;
+  let dpGen=0; /* 过渡代际号：新动作开始即作废旧的延时回调，防止快速连点/中途点导航导致状态错乱 */
   function openDetail(p,i){
+    if(document.body.classList.contains('detail-open'))return;
+    ++dpGen;
     dp.innerHTML='';
     const bar=mk('div','dp-bar');
     const back=mk('button','dp-back'); back.type='button'; back.setAttribute('aria-label','返回作品列表');
@@ -578,21 +588,29 @@ body.detail-open .to-top{display:grid}
     const dpCt=mk('section','dp-contact');
     renderContact(dpCt,false);
     dp.append(dpCt);
-    lastScroll=window.scrollY;
+    /* 微信式推入：锁定主页滚动（位置天然保留），详情页从右缘滑入 */
+    dp.scrollTo(0,0);
+    document.documentElement.classList.add('dp-lock');
     document.body.classList.add('detail-open');
     dp.setAttribute('aria-hidden','false');
-    window.scrollTo(0,0);
   }
   function closeDetail(){
+    if(!document.body.classList.contains('detail-open'))return;
+    const gen=++dpGen;
     document.body.classList.remove('detail-open');
-    dp.innerHTML='';
+    document.documentElement.classList.remove('dp-lock');
     dp.setAttribute('aria-hidden','true');
-    window.scrollTo(0,lastScroll||0);
+    /* 滑出动画结束后再清空内容，避免滑出途中页面变空 */
+    setTimeout(()=>{
+      if(gen!==dpGen)return;
+      dp.innerHTML='';
+      dp.scrollTo(0,0);
+    },600);
   }
   /* 右下角悬浮「置顶」：详情页里从最底部一键回到顶部 */
   const toTop=$('#to-top');
   if(toTop) toTop.addEventListener('click',()=>{
-    window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+    dp.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   });
   /* 手机端右滑返回上一级：详情页里向右滑 >80px、且明显是横向手势，即回到作品列表 */
   let tsx=0,tsy=0,tst=0;
