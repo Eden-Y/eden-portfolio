@@ -395,6 +395,28 @@ body.detail-open .to-top{display:grid}
     document.addEventListener('click',e=>{ if(navEl.classList.contains('menu-open')&&!navEl.contains(e.target)) closeMenu(); });
   }
 
+  /* 详情页历史记录：系统级右滑返回 / 安卓返回键先回到作品列表，而不是直接退出网站。
+     打开详情页时压一条历史；后退时若详情页还开着，只收起详情页。
+     全部包 try/catch：file:// 或编辑器预览 iframe 里 pushState 可能被禁，此时退回原来的纯动画行为，不会卡住。 */
+  let dpGen=0, dpPushed=false, dpCloseTimer=0;
+  function dpPush(){
+    if(dpPushed)return;
+    try{ history.pushState({edenDetail:1},''); dpPushed=true; }catch(e){}
+  }
+  function dpRelease(){
+    if(!dpPushed)return;
+    dpPushed=false;
+    try{ history.back(); }catch(e){}
+  }
+  window.addEventListener('popstate',()=>{
+    dpPushed=false;
+    clearTimeout(dpCloseTimer);
+    /* 详情页开着 → 这次后退只收起详情页；没开 → 正常交给浏览器离开网站 */
+    if(document.body.classList.contains('detail-open')) closeDetail(true);
+  });
+  /* 刷新页面后清掉残留标记，避免返回键空跳一次 */
+  try{ if(history.state&&history.state.edenDetail) history.replaceState(null,''); }catch(e){}
+
   /* 显式锚点滚动：在 file://、http 和编辑器预览的内嵌文档里都可靠 */
   document.addEventListener('click',e=>{
     const a=e.target.closest&&e.target.closest('a[href^="#"]'); if(!a)return;
@@ -408,6 +430,7 @@ body.detail-open .to-top{display:grid}
       document.documentElement.classList.remove('dp-lock');
       const dpEl=document.getElementById('detail-page');
       if(dpEl){ dpEl.innerHTML=''; dpEl.setAttribute('aria-hidden','true'); }
+      dpRelease(); /* 同步消耗历史记录，避免之后返回键多退一次 */
     }
     const offset=id==='about'?0:64;
     const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-offset);
@@ -640,7 +663,7 @@ body.detail-open .to-top{display:grid}
 
   /* 详情二级页面：主导航保留，左上角返回，整页铺开看得更清楚 */
   const dp=$('#detail-page');
-  let dpGen=0; /* 过渡代际号：新动作开始即作废旧的延时回调，防止快速连点/中途点导航导致状态错乱 */
+  /* dpGen：过渡代际号，新动作开始即作废旧的延时回调，防止快速连点/中途点导航导致状态错乱 */
   function openDetail(p,i,total){
     if(document.body.classList.contains('detail-open'))return;
     ++dpGen;
@@ -669,13 +692,30 @@ body.detail-open .to-top{display:grid}
     document.documentElement.classList.add('dp-lock');
     document.body.classList.add('detail-open');
     dp.setAttribute('aria-hidden','false');
+    dpPush();
   }
-  function closeDetail(){
+  /* fromPop=true 表示这次关闭本身来自浏览器「后退」，不能再往后退一次 */
+  function closeDetail(fromPop){
+    if(!document.body.classList.contains('detail-open'))return;
+    clearTimeout(dpCloseTimer);
+    if(!fromPop && dpPushed){
+      /* 点返回按钮 / 页面内右滑：用一次后退消耗那条历史，popstate 会回调 closeDetail(true)。
+         若某环境不派发 popstate（如受限的 file:// / iframe），350ms 后兜底直接收起，绝不卡住。 */
+      dpCloseTimer=setTimeout(()=>{
+        if(document.body.classList.contains('detail-open')) dpCloseNow();
+      },350);
+      dpRelease();
+      return;
+    }
+    dpCloseNow();
+  }
+  function dpCloseNow(){
     if(!document.body.classList.contains('detail-open'))return;
     const gen=++dpGen;
     document.body.classList.remove('detail-open');
     document.documentElement.classList.remove('dp-lock');
     dp.setAttribute('aria-hidden','true');
+    dpPushed=false;
     /* 滑出动画结束后再清空内容，避免滑出途中页面变空 */
     setTimeout(()=>{
       if(gen!==dpGen)return;
