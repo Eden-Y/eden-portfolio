@@ -775,5 +775,69 @@ body.detail-open .to-top{display:grid}
   document.querySelectorAll('.brand img').forEach(im=>im.addEventListener('load',setNavH));
 })();
 </script>
+<script>
+/* 百度统计 v32：仅两个正式域名加载；本地 file:// / 编辑器预览 / 局域网一律不加载、不发请求 */
+(function(){
+  var IDS={
+    'eden-y.github.io':'d8ee8369139f4d04f7d90e45237d246f',
+    'eden-portfolio-cn.app.workbuddy.host':'2e3799faaf69e2416b7fa7fab7a484e8'
+  };
+  var id=IDS[location.hostname||''];
+  if(!id)return;
+  window._hmt=window._hmt||[];
+  (function(){
+    var hm=document.createElement('script');
+    hm.src='https://hm.baidu.com/hm.js?'+id;
+    hm.async=true;
+    var s=document.getElementsByTagName('script')[0];
+    if(s&&s.parentNode)s.parentNode.insertBefore(hm,s);
+    else document.head.appendChild(hm);
+  })();
+  function ev(cat,act,label,value){
+    try{window._hmt.push(['_trackEvent',cat,act,label||'',value==null?1:value]);}catch(e){}
+  }
+  function cut(s){return String(s||'').replace(/\s+/g,' ').trim().slice(0,50)||'未命名';}
+  /* 事件 1：点开哪个作品；事件 3：有没有点 PDF 下载 */
+  document.addEventListener('click',function(e){
+    var t=e.target;
+    if(!t||!t.closest)return;
+    var card=t.closest('.card');
+    if(card){var h=card.querySelector('.card-title');ev('作品','打开',cut(h&&h.textContent));return;}
+    if(t.closest('.pdf-link'))ev('下载','点击PDF','作品集PDF');
+  },true);
+  /* 事件 2：详情页停留时长（秒数 + 分档），关闭详情页时上报 */
+  var t0=0,curTitle='';
+  function bucket(sec){
+    return sec<5?'0-5秒':sec<15?'5-15秒':sec<30?'15-30秒':sec<60?'30-60秒':sec<180?'1-3分钟':'3分钟以上';
+  }
+  function flush(){
+    if(!t0)return;
+    var sec=Math.max(0,Math.round((Date.now()-t0)/1000));
+    ev('作品','停留',curTitle,sec);
+    ev('作品','停留分档',bucket(sec));
+    t0=0;
+  }
+  function watch(){
+    if(document.body.classList.contains('detail-open')){
+      if(!t0){t0=Date.now();var d=document.querySelector('.dp-title');curTitle=cut(d&&d.textContent);}
+    }else flush();
+  }
+  if(window.MutationObserver)new MutationObserver(watch).observe(document.body,{attributes:true,attributeFilter:['class']});
+  else setInterval(watch,600);
+  addEventListener('pagehide',flush);
+  /* 页脚匿名统计说明：追加进已有文字，不新增 span，保持原有排版 */
+  function note(){
+    var ft=document.getElementById('footer');
+    if(!ft||!ft.lastElementChild||ft.querySelector('[data-stats-note]'))return;
+    var n=document.createElement('small');
+    n.setAttribute('data-stats-note','1');
+    n.textContent=' · 本页使用匿名访问统计';
+    n.style.cssText='font-size:11px;letter-spacing:0;opacity:.8';
+    ft.lastElementChild.appendChild(n);
+  }
+  note();
+  addEventListener('DOMContentLoaded',note);
+})();
+</script>
 </body>
 </html>
